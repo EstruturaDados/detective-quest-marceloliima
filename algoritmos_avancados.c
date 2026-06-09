@@ -2,96 +2,156 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Estrutura da sala (nó da árvore)
+// ===============================
+// ESTRUTURA DAS SALAS (MAPA)
+// ===============================
 typedef struct Sala {
     char nome[50];
+    char pista[100];
     struct Sala *esq;
     struct Sala *dir;
 } Sala;
 
-// Cria uma nova sala
-Sala* criarSala(char* nome) {
+// ===============================
+// ESTRUTURA DAS PISTAS (BST)
+// ===============================
+typedef struct Pista {
+    char texto[100];
+    struct Pista *esq;
+    struct Pista *dir;
+} Pista;
+
+// ===============================
+// CRIAR SALA
+// ===============================
+Sala* criarSala(char* nome, char* pista) {
     Sala* nova = (Sala*) malloc(sizeof(Sala));
 
     strcpy(nova->nome, nome);
+    strcpy(nova->pista, pista);
+
     nova->esq = NULL;
     nova->dir = NULL;
 
     return nova;
 }
 
-// Exploração da mansão
-void explorarSalas(Sala* atual) {
+// ===============================
+// INSERIR PISTA NA BST
+// ===============================
+Pista* inserirPista(Pista* raiz, char* texto) {
+
+    if (raiz == NULL) {
+        Pista* nova = (Pista*) malloc(sizeof(Pista));
+        strcpy(nova->texto, texto);
+        nova->esq = NULL;
+        nova->dir = NULL;
+        return nova;
+    }
+
+    if (strcmp(texto, raiz->texto) < 0) {
+        raiz->esq = inserirPista(raiz->esq, texto);
+    } else {
+        raiz->dir = inserirPista(raiz->dir, texto);
+    }
+
+    return raiz;
+}
+
+// ===============================
+// EXIBIR PISTAS EM ORDEM
+// ===============================
+void exibirPistas(Pista* raiz) {
+    if (raiz != NULL) {
+        exibirPistas(raiz->esq);
+        printf("- %s\n", raiz->texto);
+        exibirPistas(raiz->dir);
+    }
+}
+
+// ===============================
+// EXPLORAR SALAS E COLETAR PISTAS
+// ===============================
+Pista* explorarSalasComPistas(Sala* atual, Pista* pistas) {
+
     char op;
 
     while (atual != NULL) {
 
-        printf("\n===========================\n");
+        printf("\n=============================\n");
         printf("Você está em: %s\n", atual->nome);
-        printf("===========================\n");
 
-        // Se for sala final (folha)
-        if (atual->esq == NULL && atual->dir == NULL) {
-            printf("Você chegou a uma sala sem saídas!\n");
-            break;
+        // coleta de pista
+        if (strlen(atual->pista) > 0) {
+            printf("🔎 Pista encontrada: %s\n", atual->pista);
+            pistas = inserirPista(pistas, atual->pista);
         }
 
-        printf("Escolha o caminho:\n");
-        printf("e - esquerda\n");
-        printf("d - direita\n");
-        printf("s - sair\n");
-        printf("Opção: ");
+        printf("=============================\n");
 
+        printf("e = esquerda | d = direita | s = sair\n");
+        printf("Opção: ");
         scanf(" %c", &op);
 
         if (op == 'e') {
-            if (atual->esq != NULL) {
+            if (atual->esq != NULL)
                 atual = atual->esq;
-            } else {
-                printf("Não existe caminho à esquerda!\n");
-            }
+            else
+                printf("Sem caminho à esquerda!\n");
         }
+
         else if (op == 'd') {
-            if (atual->dir != NULL) {
+            if (atual->dir != NULL)
                 atual = atual->dir;
-            } else {
-                printf("Não existe caminho à direita!\n");
-            }
+            else
+                printf("Sem caminho à direita!\n");
         }
+
         else if (op == 's') {
-            printf("Exploração encerrada.\n");
             break;
         }
+
         else {
             printf("Opção inválida!\n");
         }
     }
+
+    return pistas;
 }
 
+// ===============================
+// MAIN
+// ===============================
 int main() {
 
-    // ===== CRIAÇÃO DA ÁRVORE =====
+    Pista* pistas = NULL;
 
-    Sala* hall = criarSala("Hall de Entrada");
-    Sala* biblioteca = criarSala("Biblioteca");
-    Sala* cozinha = criarSala("Cozinha");
-    Sala* jardim = criarSala("Jardim");
-    Sala* sotao = criarSala("Sótão");
-    Sala* escritorio = criarSala("Escritório");
+    // ===== MAPA DA MANSÃO =====
 
-    // Conectando a árvore manualmente
+    Sala* hall = criarSala("Hall de Entrada", "Pegadas na entrada");
+    Sala* salaEstar = criarSala("Sala de Estar", "Vaso quebrado");
+    Sala* cozinha = criarSala("Cozinha", "Facas fora do lugar");
+    Sala* biblioteca = criarSala("Biblioteca", "Livro aberto na mesa");
+    Sala* sotao = criarSala("Sótão", "Janela aberta");
 
-    hall->esq = biblioteca;
+    // ligação da árvore
+    hall->esq = salaEstar;
     hall->dir = cozinha;
 
-    biblioteca->esq = jardim;
-    biblioteca->dir = sotao;
+    salaEstar->esq = biblioteca;
+    salaEstar->dir = sotao;
 
-    cozinha->dir = escritorio;
+    // ===== EXPLORAÇÃO =====
 
-    // ===== INÍCIO DO JOGO =====
+    pistas = explorarSalasComPistas(hall, pistas);
 
-    explorarSalas(hall);
+    // ===== RESULTADO FINAL =====
+
+    printf("\n=============================\n");
+    printf("PISTAS COLETADAS (ORDEM ALFABÉTICA)\n");
+    printf("=============================\n");
+
+    exibirPistas(pistas);
 
     return 0;
 }
